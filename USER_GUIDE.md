@@ -1,323 +1,228 @@
-# Slack ERPNext Integration - User Guide
+# Slack Integration for Django Applications
 
-Welcome to the Slack ERPNext Integration! This guide will help you set up and use Slack notifications in your ERPNext system.
+Welcome to the Django Slack Integration. This guide explains how to connect your Django application to Slack for real-time notifications using Incoming Webhooks.
 
 ## Table of Contents
-1. [Overview](#overview)
-2. [Prerequisites](#prerequisites)
-3. [Setting Up Slack App](#setting-up-slack-app)
-4. [Configuring ERPNext](#configuring-erpnext)
-5. [Creating Notifications](#creating-notifications)
-6. [Testing Your Setup](#testing-your-setup)
-7. [Advanced Usage](#advanced-usage)
-8. [Troubleshooting](#troubleshooting)
+
+1. Overview
+2. Prerequisites
+3. Create Slack App
+4. Django Setup
+5. Sending Messages
+6. Testing
+7. Advanced Usage
+8. Troubleshooting
+9. Best Practices
+10. Next Steps
 
 ## Overview
 
-The Slack ERPNext Integration allows you to send real-time notifications from ERPNext to your Slack channels. This is useful for:
-- Alerting your team about new sales orders
-- Notifying about payment receipts
-- Monitoring inventory levels
-- Tracking project milestones
-- And much more!
+This integration allows Django applications to send real-time notifications directly to Slack channels.
+
+It is useful for automating alerts and keeping teams updated on system events.
+
+### Common use cases
+
+- User registration notifications.
+- Order and payment alerts.
+- Error monitoring.
+- Background job updates.
+- Admin activity logs.
 
 ## Prerequisites
 
-- A Slack workspace (create one at [slack.com](https://slack.com))
-- Admin access to your Slack workspace
-- ERPNext installation with this app installed
-- System Manager role in ERPNext
+Before starting, ensure you have:
 
-## Setting Up Slack App
+- A Slack workspace.
+- A Django project set up.
+- Python installed.
+- `requests` library installed.
+- Slack Incoming Webhook URL.
 
-### Step 1: Create a Slack App
+## Create Slack App
 
-1. Visit [Slack API Apps](https://api.slack.com/apps)
-2. Click **"Create New App"**
-3. Choose **"From scratch"**
-4. Fill in the details:
-   - **App Name**: `ERPNext Notifications` (or any name you prefer)
-   - **Pick a workspace**: Select your Slack workspace
-5. Click **"Create App"**
+### Step 1: Create App
+
+- Go to [https://api.slack.com/apps](https://api.slack.com/apps).
+- Click **Create New App**.
+- Select **From scratch**.
+- Enter an app name, for example `Django Notifications`.
+- Choose your workspace.
+- Click **Create App**.
 
 ### Step 2: Enable Incoming Webhooks
 
-1. In your app settings, navigate to **"Features" → "Incoming Webhooks"**
-2. Toggle **"Activate Incoming Webhooks"** to **ON**
-3. Scroll down to **"Webhook URLs for Your Workspace"**
-4. Click **"Add New Webhook to Workspace"**
-5. Select the channel where notifications should be posted
-6. Click **"Allow"**
-7. **Copy the Webhook URL** - it will look like:
-   ```
-   YOUR_SLACK_WEBHOOK_URL
-   ```
+- Open your Slack app settings.
+- Go to **Features → Incoming Webhooks**.
+- Turn on **Activate Incoming Webhooks**.
+- Click **Add New Webhook to Workspace**.
+- Select a channel.
+- Click **Allow**.
+- Copy the webhook URL.
 
-### Step 3: Optional - Customize Your App
+Example:
 
-You can customize your Slack app:
-- **App Icon**: Upload a custom icon (e.g., your company logo)
-- **App Name**: Change the display name
-- **Description**: Add a description for your app
-
-## Configuring ERPNext
-
-### Step 1: Access Slack Integration Workspace
-
-1. Log in to your ERPNext instance
-2. Search for **"Slack Integration"** in the awesome bar (top search)
-3. Or navigate to: **Home → Integrations → Slack Integration**
-
-### Step 2: Create a Slack Webhook URL
-
-1. In the Slack Integration workspace, click on **"Slack Webhook URL"**
-2. Click **"New"**
-3. Fill in the following details:
-   - **Webhook Name**: A friendly name (e.g., "Sales Channel", "General Alerts")
-   - **Webhook URL**: Paste the URL you copied from Slack
-   - **Show Document Link**: Check this to include clickable links to documents
-4. Click **"Save"**
-
-You can create multiple webhook URLs for different channels!
-
-## Creating Notifications
-
-### Step 1: Create a New Notification
-
-1. Go to **"Notification"** list (search for it in the awesome bar)
-2. Click **"New"**
-
-### Step 2: Configure the Notification
-
-Fill in the following fields:
-
-1. **Basic Information**:
-   - **Subject**: Enter a subject line (supports Jinja templates)
-     - Example: `New Sales Order: {{ doc.name }}`
-
-2. **Trigger Settings**:
-   - **Document Type**: Select which DocType to monitor (e.g., "Sales Order")
-   - **Send Alert On**: Choose when to trigger:
-     - **New**: When a new document is created
-     - **Save**: When a document is saved
-     - **Submit**: When a document is submitted
-     - **Cancel**: When a document is cancelled
-     - **Value Change**: When a specific field changes
-     - **Days Before/After**: For date-based alerts
-
-3. **Channel Settings**:
-   - **Channel**: Select **"Slack"** from the dropdown
-   - **Slack Channel**: Select the webhook you created earlier
-
-4. **Message**:
-   - Enter your message using Markdown and Jinja2 templates
-   - You can use `{{ doc.fieldname }}` to insert field values
-
-### Step 3: Example Notification Message
-
-Here's a sample message for a Sales Order notification:
-
-```jinja
-🎉 *New Sales Order Created!*
-
-*Order Number:* {{ doc.name }}
-*Customer:* {{ doc.customer }}
-*Total Amount:* {{ doc.currency }} {{ doc.grand_total }}
-*Status:* {{ doc.status }}
-
-{% if doc.delivery_date %}
-*Expected Delivery:* {{ doc.delivery_date }}
-{% endif %}
-
-{% if doc.sales_team %}
-*Sales Team:*
-{% for member in doc.sales_team %}
-  • {{ member.sales_person }}
-{% endfor %}
-{% endif %}
-
-_Notification sent from ERPNext via Slack Integration_
+```text
+YOUR_SLACK_WEBHOOK_URL
 ```
 
-### Step 4: Advanced Options (Optional)
+## Django Setup
 
-- **Condition**: Add a Python expression to filter when notifications are sent
-  - Example: `doc.grand_total > 10000` (only for orders over 10,000)
+### Step 1: Install Dependencies
 
-- **Recipients**: For email notifications (not applicable for Slack)
+```bash
+pip install requests python-dotenv
+```
 
-- **Set Property After Alert**: Automatically update a field after sending
+### Step 2: Add Environment Variables
 
-### Step 5: Save and Enable
+Create a `.env` file:
 
-1. Click **"Save"**
-2. Make sure **"Enabled"** is checked
-3. Your notification is now active!
+```env
+SLACK_WEBHOOK_URL=your_slack_webhook_url_here
+```
 
-## Testing Your Setup
-
-### Method 1: Create a Test Document
-
-1. Create a new document of the type you configured (e.g., Sales Order)
-2. Fill in the required fields
-3. Save or Submit (depending on your trigger)
-4. Check your Slack channel - you should see the notification!
-
-### Method 2: Use the Test Function
-
-If you have the utility functions enabled:
+### Step 3: Load Environment Variables in Django
 
 ```python
-# From ERPNext Console
-from slack_erpnext_integration.slack_erpnext_integration.utils import test_slack_webhook
+import os
+from dotenv import load_dotenv
 
-test_slack_webhook("Your Webhook Name")
+load_dotenv()
+
+SLACK_WEBHOOK_URL = os.getenv("SLACK_WEBHOOK_URL")
 ```
+
+## Sending Messages
+
+### Create Slack Utility Function
+
+```python
+import requests
+
+def send_slack_message(message):
+    if not SLACK_WEBHOOK_URL:
+        return False
+
+    payload = {
+        "text": message
+    }
+
+    try:
+        response = requests.post(SLACK_WEBHOOK_URL, json=payload, timeout=10)
+        response.raise_for_status()
+        return True
+    except requests.RequestException as e:
+        print(f"Slack error: {e}")
+        return False
+```
+
+### Example Usage in Django View
+
+```python
+from django.http import JsonResponse
+from .utils import send_slack_message
+
+def notify(request):
+    send_slack_message("🚀 Event triggered in Django app")
+    return JsonResponse({"status": "sent"})
+```
+
+### Example Usage in Django Signals
+
+```python
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+from django.contrib.auth.models import User
+from .utils import send_slack_message
+
+@receiver(post_save, sender=User)
+def user_created(sender, instance, created, **kwargs):
+    if created:
+        send_slack_message(f"🎉 New user registered: {instance.username}")
+```
+
+## Testing
+
+Run your server:
+
+```bash
+python manage.py runserver
+```
+
+Trigger an event and check your Slack channel.
 
 ## Advanced Usage
 
 ### Multiple Channels
 
-You can create multiple webhook URLs for different purposes:
-- **Sales Channel**: For sales-related notifications
-- **Support Channel**: For customer support tickets
-- **Inventory Channel**: For stock alerts
-- **General Channel**: For general updates
+Use different webhook URLs for different purposes:
 
-### Custom Conditions
+- Alerts channel.
+- Errors channel.
+- Admin logs.
+- Product updates.
 
-Use conditions to fine-tune when notifications are sent:
+### Rich Messages
 
 ```python
-# Only for high-value orders
-doc.grand_total > 50000
-
-# Only for specific customer groups
-doc.customer_group == "VIP Customers"
-
-# Only during business hours
-import datetime
-datetime.datetime.now().hour >= 9 and datetime.datetime.now().hour <= 18
-
-# Only for specific status
-doc.status in ["Pending", "Overdue"]
+send_slack_message(
+    "*New Event*\n\n"
+    f"User: {user.username}\n"
+    f"Email: {user.email}\n"
+)
 ```
 
-### Rich Formatting
+### Error Logging Example
 
-Use Slack's markdown for rich messages:
+```python
+import logging
 
-```markdown
-*Bold text*
-_Italic text_
-~Strikethrough~
-`code`
-```code block```
+logger = logging.getLogger(__name__)
 
-• Bullet points
-1. Numbered lists
-
-> Blockquote
+try:
+    1 / 0
+except Exception as e:
+    logger.error(str(e))
+    send_slack_message(f"⚠️ Error occurred: {e}")
 ```
-
-### Document Links
-
-When "Show Document Link" is enabled, Slack will include a button to view the document in ERPNext. This makes it easy for your team to quickly access the relevant information.
 
 ## Troubleshooting
 
-### Issue: Notifications Not Appearing in Slack
+### No messages received
 
-**Possible Causes:**
-1. **Webhook URL is incorrect**
-   - Solution: Verify the webhook URL in ERPNext matches the one from Slack
+- Check webhook URL.
+- Ensure channel permissions are correct.
+- Confirm function is being called.
 
-2. **Webhook is not enabled**
-   - Solution: Check that the Slack Webhook URL document has "Enabled" checked
+### Invalid webhook
 
-3. **Notification is disabled**
-   - Solution: Ensure the Notification document has "Enabled" checked
+Ensure the webhook starts with:
 
-4. **Trigger condition not met**
-   - Solution: Review your event type and condition settings
+```text
+https://hooks.slack.com/
+```
 
-### Issue: Permission Denied
+### Messages not sending
 
-**Cause:** Your user doesn't have access to create/modify notifications
+- Check internet connection.
+- Ensure `requests` is installed.
+- Confirm `.env` is loaded correctly.
 
-**Solution:**
-- Contact your System Manager
-- Ensure you have the "System Manager" role
+## Best Practices
 
-### Issue: Invalid Webhook URL Error
-
-**Cause:** The webhook URL doesn't start with `YOUR_SLACK_WEBHOOK_URL`
-
-**Solution:**
-- Copy the complete webhook URL from Slack
-- Make sure you didn't copy any extra spaces or characters
-
-### Issue: Template Errors
-
-**Cause:** Invalid Jinja2 syntax in your message
-
-**Solution:**
-- Check your template syntax
-- Make sure all `{{ }}` and `{% %}` tags are properly closed
-- Verify field names are correct (use "View Properties" button)
-
-### Issue: Slack App Not Posting to Channel
-
-**Cause:** The Slack app wasn't granted permission to post to the channel
-
-**Solution:**
-1. Go back to your Slack App settings
-2. Remove and re-add the webhook URL
-3. Make sure to select the correct channel and authorize it
-
-## Tips and Best Tricks
-
-### 1. Test First
-Always test your notifications with a test document before enabling them in production.
-
-### 2. Use Conditions
-Use conditions to avoid spam and only send relevant notifications.
-
-### 3. Keep Messages Concise
-Slack works best with concise, actionable messages. Include only the most important information.
-
-### 4. Use Emojis
-Emojis make notifications more visible and easier to scan:
-- ✅ for success
-- ⚠️ for warnings
-- 🎉 for celebrations
-- 📊 for reports
-
-### 5. Set Up Multiple Channels
-Create different channels for different types of notifications to keep things organized.
-
-### 6. Monitor Slack Activity
-Keep an eye on your Slack channels to ensure notifications are working as expected.
-
-### 7. Document Your Setup
-Keep a record of which notifications you've set up and for what purpose.
-
-## Need Help?
-
-If you encounter issues not covered in this guide:
-
-1. Check the ERPNext logs: `bench --site [sitename] logs`
-2. Check Frappe/ERPNext forums
-3. Review Slack webhook documentation
-4. Contact your system administrator
+- Never hardcode webhook URLs.
+- Always use environment variables.
+- Keep messages short and meaningful.
+- Use emojis for clarity.
+- Avoid sending too many notifications to prevent spam.
 
 ## Next Steps
 
-Now that you have Slack notifications set up, consider:
+- Add Celery for async Slack notifications.
+- Add retry mechanism for failed requests.
+- Add multiple workspace support.
+- Add admin dashboard for logs.
+- Extend to other messaging platforms.
 
-- Creating notifications for other important DocTypes
-- Setting up different channels for different departments
-- Using conditions to create smart, context-aware notifications
-- Training your team on how to interpret and act on notifications
-
-Happy notifying! 🚀
+🚀 You now have a production-ready Slack integration for Django.
